@@ -26,7 +26,6 @@ def create_version(db: Session, note: Note, version_number: int):
     db.add(version)
 
 
-
 @router.post("/", response_model=NoteResponse, status_code=status.HTTP_201_CREATED)
 def create_note(note_data: NoteCreate, db: Session = Depends(get_db)):
     """Create a new note"""
