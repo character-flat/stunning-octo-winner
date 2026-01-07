@@ -1,9 +1,23 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.core.config import settings
 from app.api.router import api_router
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Application lifespan context manager for startup/shutdown events."""
+    # Startup: Create database tables
+    from app.db.database import engine, Base
+    from app.models.user import User
+    from app.models.note import Note, NoteVersion
+    Base.metadata.create_all(bind=engine)
+    yield
+    # Shutdown: cleanup if needed
+
 
 # Create FastAPI application
 app = FastAPI(
@@ -25,7 +39,8 @@ Protected endpoints require a Bearer token in the Authorization header.
     """,
     docs_url="/docs",
     redoc_url="/redoc",
-    openapi_url="/openapi.json"
+    openapi_url="/openapi.json",
+    lifespan=lifespan
 )
 
 # Configure CORS
@@ -39,15 +54,6 @@ app.add_middleware(
 
 # Include API router
 app.include_router(api_router)
-
-
-@app.on_event("startup")
-async def startup_event():
-    """Create database tables on startup."""
-    from app.db.database import engine, Base
-    from app.models.user import User
-    from app.models.note import Note, NoteVersion
-    Base.metadata.create_all(bind=engine)
 
 
 @app.get("/", tags=["Root"])
