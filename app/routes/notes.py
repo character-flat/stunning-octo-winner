@@ -70,22 +70,30 @@ def update_note(note_id: int, note_data: NoteUpdate, db: Session = Depends(get_d
             detail=f"Note with id {note_id} not found"
         )
     
-    # Update note fields if provided
-    if note_data.title is not None:
+    # Track if any changes were made
+    changed = False
+    
+    # Update note fields if provided and different from current values
+    if note_data.title is not None and note_data.title != note.title:
         note.title = note_data.title
-    if note_data.content is not None:
+        changed = True
+    if note_data.content is not None and note_data.content != note.content:
         note.content = note_data.content
+        changed = True
     
-    db.commit()
-    db.refresh(note)
-    
-    # Get the latest version number and create a new version
-    latest_version = db.query(NoteVersion).filter(
-        NoteVersion.note_id == note_id
-    ).order_by(NoteVersion.version_number.desc()).first()
-    
-    new_version_number = (latest_version.version_number + 1) if latest_version else 1
-    create_version(db, note, version_number=new_version_number)
+    # Only create a new version if changes were made
+    if changed:
+        db.commit()
+        db.refresh(note)
+        
+        # Get the latest version number and create a new version
+        # Use FOR UPDATE to prevent race conditions
+        latest_version = db.query(NoteVersion).filter(
+            NoteVersion.note_id == note_id
+        ).order_by(NoteVersion.version_number.desc()).with_for_update().first()
+        
+        new_version_number = (latest_version.version_number + 1) if latest_version else 1
+        create_version(db, note, version_number=new_version_number)
     
     return note
 

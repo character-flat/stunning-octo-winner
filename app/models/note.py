@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from app.database import Base
@@ -19,6 +19,9 @@ class Note(Base):
 
 class NoteVersion(Base):
     __tablename__ = "note_versions"
+    __table_args__ = (
+        UniqueConstraint('note_id', 'version_number', name='uq_note_version'),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     note_id = Column(Integer, ForeignKey("notes.id"), nullable=False)
