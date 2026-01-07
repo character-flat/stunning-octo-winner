@@ -83,16 +83,18 @@ def update_note(note_id: int, note_data: NoteUpdate, db: Session = Depends(get_d
     
     # Only create a new version if changes were made
     if changed:
-        db.commit()
-        db.refresh(note)
-        
-        # Get the latest version number and create a new version
-        # Use FOR UPDATE to prevent race conditions
+        # Get the latest version number with FOR UPDATE lock BEFORE committing
         latest_version = db.query(NoteVersion).filter(
             NoteVersion.note_id == note_id
         ).order_by(NoteVersion.version_number.desc()).with_for_update().first()
         
         new_version_number = (latest_version.version_number + 1) if latest_version else 1
+        
+        # Now commit the note changes
+        db.commit()
+        db.refresh(note)
+        
+        # Create the new version
         create_version(db, note, version_number=new_version_number)
     
     return note

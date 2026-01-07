@@ -10,8 +10,8 @@ class Note(Base):
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String(255), nullable=False)
     content = Column(Text, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.utcnow(), nullable=False)
+    updated_at = Column(DateTime, default=lambda: datetime.utcnow(), onupdate=lambda: datetime.utcnow(), nullable=False)
 
     # Relationship to version history
     versions = relationship("NoteVersion", back_populates="note", cascade="all, delete-orphan")
@@ -28,7 +28,7 @@ class NoteVersion(Base):
     title = Column(String(255), nullable=False)
     content = Column(Text, nullable=False)
     version_number = Column(Integer, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.utcnow(), nullable=False)
 
     # Relationship to parent note
     note = relationship("Note", back_populates="versions")

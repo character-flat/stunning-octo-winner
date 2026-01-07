@@ -5,7 +5,6 @@ This script checks that all endpoints exist and have correct methods.
 """
 
 from main import app
-import json
 
 
 def test_endpoints_configured():
