@@ -31,12 +31,14 @@ def create_note(note_data: NoteCreate, db: Session = Depends(get_db)):
     """Create a new note"""
     note = Note(title=note_data.title, content=note_data.content)
     db.add(note)
+    db.flush()  # Flush to get the note.id without committing
+    
+    # Create initial version (version 1) in same transaction
+    create_version(db, note, version_number=1)
+    
+    # Commit both note and version in single transaction
     db.commit()
     db.refresh(note)
-    
-    # Create initial version (version 1)
-    create_version(db, note, version_number=1)
-    db.commit()
     
     return note
 

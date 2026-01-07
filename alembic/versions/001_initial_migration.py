@@ -2,7 +2,7 @@
 
 Revision ID: 001
 Revises: 
-Create Date: 2026-01-07 07:13:00.000000
+Create Date: 2024-01-07 07:13:00.000000
 
 """
 from alembic import op
@@ -38,7 +38,7 @@ def upgrade() -> None:
         sa.Column('content', sa.Text(), nullable=False),
         sa.Column('version_number', sa.Integer(), nullable=False),
         sa.Column('created_at', sa.DateTime(), nullable=False),
-        sa.ForeignKeyConstraint(['note_id'], ['notes.id'], ),
+        sa.ForeignKeyConstraint(['note_id'], ['notes.id'], ondelete='CASCADE'),
         sa.PrimaryKeyConstraint('id'),
         sa.UniqueConstraint('note_id', 'version_number', name='uq_note_version')
     )
