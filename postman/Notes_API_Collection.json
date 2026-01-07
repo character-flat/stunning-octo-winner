@@ -1,0 +1,672 @@
+{
+  "info": {
+    "name": "Notes API with Version History",
+    "description": "A FastAPI-based backend for a note-taking application with version history.\n\n## Authentication\nMost endpoints require JWT authentication. Use the login endpoint to get a token, then use it in the Authorization header as: `Bearer <token>`\n\n## Base URL\nReplace `{{base_url}}` with your deployed API URL.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health & Info",
+      "item": [
+        {
+          "name": "Root - API Info",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/",
+            "description": "Get API information and documentation links."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response contains message', function() {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('message');",
+                  "    pm.expect(jsonData).to.have.property('version');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/health",
+            "description": "Check if the API is healthy."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Status is healthy', function() {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.status).to.eql('healthy');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Register User",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/v1/auth/register",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"user@example.com\",\n    \"username\": \"testuser\",\n    \"password\": \"securepassword123\"\n}"
+            },
+            "description": "Register a new user account.\n\n**Request Body:**\n- `email`: Valid email address\n- `username`: Username (3-100 characters)\n- `password`: Password (6-100 characters)"
+          },
+          "response": [
+            {
+              "name": "Successful Registration",
+              "status": "Created",
+              "code": 201,
+              "body": "{\n    \"id\": 1,\n    \"email\": \"user@example.com\",\n    \"username\": \"testuser\",\n    \"created_at\": \"2024-01-01T00:00:00.000000\",\n    \"updated_at\": \"2024-01-01T00:00:00.000000\"\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 201', function() {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Response contains user data', function() {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('id');",
+                  "    pm.expect(jsonData).to.have.property('email');",
+                  "    pm.expect(jsonData).to.have.property('username');",
+                  "    pm.expect(jsonData).to.not.have.property('password');",
+                  "    pm.expect(jsonData).to.not.have.property('hashed_password');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login (Form)",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/v1/auth/login",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "username",
+                  "value": "user@example.com",
+                  "description": "User's email address"
+                },
+                {
+                  "key": "password",
+                  "value": "securepassword123",
+                  "description": "User's password"
+                }
+              ]
+            },
+            "description": "Authenticate user and get JWT token (OAuth2 form format).\n\n**Form Fields:**\n- `username`: User's email address\n- `password`: User's password"
+          },
+          "response": [
+            {
+              "name": "Successful Login",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n    \"access_token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n    \"token_type\": \"bearer\"\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response contains access token', function() {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('access_token');",
+                  "    pm.expect(jsonData.token_type).to.eql('bearer');",
+                  "    ",
+                  "    // Save token for subsequent requests",
+                  "    pm.collectionVariables.set('access_token', jsonData.access_token);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login (JSON)",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/v1/auth/login/json",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"user@example.com\",\n    \"password\": \"securepassword123\"\n}"
+            },
+            "description": "Authenticate user with JSON payload and get JWT token.\n\n**Request Body:**\n- `email`: User's email address\n- `password`: User's password"
+          },
+          "response": [
+            {
+              "name": "Successful Login",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n    \"access_token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n    \"token_type\": \"bearer\"\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response contains access token', function() {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('access_token');",
+                  "    pm.expect(jsonData.token_type).to.eql('bearer');",
+                  "    ",
+                  "    // Save token for subsequent requests",
+                  "    pm.collectionVariables.set('access_token', jsonData.access_token);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Get Current User",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/users/me",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "description": "Get the currently authenticated user's information.\n\n**Requires Authentication**"
+          },
+          "response": [
+            {
+              "name": "Successful Response",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n    \"id\": 1,\n    \"email\": \"user@example.com\",\n    \"username\": \"testuser\",\n    \"created_at\": \"2024-01-01T00:00:00.000000\",\n    \"updated_at\": \"2024-01-01T00:00:00.000000\"\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response contains user info', function() {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('id');",
+                  "    pm.expect(jsonData).to.have.property('email');",
+                  "    pm.expect(jsonData).to.have.property('username');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Notes",
+      "item": [
+        {
+          "name": "Create Note",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/v1/notes/",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"title\": \"My First Note\",\n    \"content\": \"This is the content of my first note. It can be any text content.\"\n}"
+            },
+            "description": "Create a new note.\n\n**Request Body:**\n- `title`: Note title (1-255 characters)\n- `content`: Note content\n\n**Requires Authentication**"
+          },
+          "response": [
+            {
+              "name": "Note Created",
+              "status": "Created",
+              "code": 201,
+              "body": "{\n    \"id\": 1,\n    \"title\": \"My First Note\",\n    \"content\": \"This is the content of my first note. It can be any text content.\",\n    \"owner_id\": 1,\n    \"created_at\": \"2024-01-01T00:00:00.000000\",\n    \"updated_at\": \"2024-01-01T00:00:00.000000\"\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 201', function() {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Response contains note data', function() {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('id');",
+                  "    pm.expect(jsonData).to.have.property('title');",
+                  "    pm.expect(jsonData).to.have.property('content');",
+                  "    pm.expect(jsonData).to.have.property('owner_id');",
+                  "    pm.expect(jsonData).to.have.property('created_at');",
+                  "    pm.expect(jsonData).to.have.property('updated_at');",
+                  "    ",
+                  "    // Save note ID for subsequent requests",
+                  "    pm.collectionVariables.set('note_id', jsonData.id);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get All Notes",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/notes/?skip=0&limit=100",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "notes", ""],
+              "query": [
+                {
+                  "key": "skip",
+                  "value": "0",
+                  "description": "Number of notes to skip (pagination)"
+                },
+                {
+                  "key": "limit",
+                  "value": "100",
+                  "description": "Maximum number of notes to return"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "description": "Get all notes belonging to the current user.\n\n**Query Parameters:**\n- `skip`: Number of notes to skip (default: 0)\n- `limit`: Maximum number of notes to return (default: 100)\n\n**Requires Authentication**"
+          },
+          "response": [
+            {
+              "name": "Notes List",
+              "status": "OK",
+              "code": 200,
+              "body": "[\n    {\n        \"id\": 1,\n        \"title\": \"My First Note\",\n        \"content\": \"This is the content of my first note.\",\n        \"owner_id\": 1,\n        \"created_at\": \"2024-01-01T00:00:00.000000\",\n        \"updated_at\": \"2024-01-01T00:00:00.000000\"\n    }\n]"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is an array', function() {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Single Note",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/notes/{{note_id}}",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "description": "Get a specific note by ID.\n\n**Path Parameters:**\n- `note_id`: The ID of the note to retrieve\n\n**Requires Authentication**"
+          },
+          "response": [
+            {
+              "name": "Note Found",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n    \"id\": 1,\n    \"title\": \"My First Note\",\n    \"content\": \"This is the content of my first note.\",\n    \"owner_id\": 1,\n    \"created_at\": \"2024-01-01T00:00:00.000000\",\n    \"updated_at\": \"2024-01-01T00:00:00.000000\"\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response contains note data', function() {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('id');",
+                  "    pm.expect(jsonData).to.have.property('title');",
+                  "    pm.expect(jsonData).to.have.property('content');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Note",
+          "request": {
+            "method": "PUT",
+            "url": "{{base_url}}/api/v1/notes/{{note_id}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"title\": \"Updated Note Title\",\n    \"content\": \"This is the updated content of the note. A new version will be created.\"\n}"
+            },
+            "description": "Update a note (creates a new version).\n\n**Path Parameters:**\n- `note_id`: The ID of the note to update\n\n**Request Body:**\n- `title`: New title (optional)\n- `content`: New content (optional)\n\n**Note:** Updates create a new version automatically.\n\n**Requires Authentication**"
+          },
+          "response": [
+            {
+              "name": "Note Updated",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n    \"id\": 1,\n    \"title\": \"Updated Note Title\",\n    \"content\": \"This is the updated content of the note. A new version will be created.\",\n    \"owner_id\": 1,\n    \"created_at\": \"2024-01-01T00:00:00.000000\",\n    \"updated_at\": \"2024-01-01T00:01:00.000000\"\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Note was updated', function() {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.title).to.eql('Updated Note Title');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete Note",
+          "request": {
+            "method": "DELETE",
+            "url": "{{base_url}}/api/v1/notes/{{note_id}}",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "description": "Delete a note and all its versions.\n\n**Path Parameters:**\n- `note_id`: The ID of the note to delete\n\n**Requires Authentication**"
+          },
+          "response": [
+            {
+              "name": "Note Deleted",
+              "status": "No Content",
+              "code": 204,
+              "body": ""
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 204', function() {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Version History",
+      "item": [
+        {
+          "name": "Get Note Versions",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/notes/{{note_id}}/versions",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "description": "Get all versions of a note.\n\n**Path Parameters:**\n- `note_id`: The ID of the note\n\n**Requires Authentication**"
+          },
+          "response": [
+            {
+              "name": "Versions List",
+              "status": "OK",
+              "code": 200,
+              "body": "[\n    {\n        \"id\": 2,\n        \"note_id\": 1,\n        \"version_number\": 2,\n        \"title\": \"Updated Note Title\",\n        \"content\": \"This is the updated content.\",\n        \"editor_id\": 1,\n        \"created_at\": \"2024-01-01T00:01:00.000000\"\n    },\n    {\n        \"id\": 1,\n        \"note_id\": 1,\n        \"version_number\": 1,\n        \"title\": \"My First Note\",\n        \"content\": \"This is the original content.\",\n        \"editor_id\": 1,\n        \"created_at\": \"2024-01-01T00:00:00.000000\"\n    }\n]"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is an array of versions', function() {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('array');",
+                  "    if (jsonData.length > 0) {",
+                  "        pm.expect(jsonData[0]).to.have.property('version_number');",
+                  "        pm.expect(jsonData[0]).to.have.property('content');",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Specific Version",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/notes/{{note_id}}/versions/1",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "description": "Get a specific version of a note.\n\n**Path Parameters:**\n- `note_id`: The ID of the note\n- `version_number`: The version number to retrieve\n\n**Requires Authentication**"
+          },
+          "response": [
+            {
+              "name": "Version Found",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n    \"id\": 1,\n    \"note_id\": 1,\n    \"version_number\": 1,\n    \"title\": \"My First Note\",\n    \"content\": \"This is the original content.\",\n    \"editor_id\": 1,\n    \"created_at\": \"2024-01-01T00:00:00.000000\"\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response contains version data', function() {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('version_number');",
+                  "    pm.expect(jsonData).to.have.property('title');",
+                  "    pm.expect(jsonData).to.have.property('content');",
+                  "    pm.expect(jsonData).to.have.property('editor_id');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Restore Note to Version",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/v1/notes/{{note_id}}/restore",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"version_number\": 1\n}"
+            },
+            "description": "Restore a note to a previous version.\n\nThis creates a new version with the content from the specified version.\n\n**Path Parameters:**\n- `note_id`: The ID of the note\n\n**Request Body:**\n- `version_number`: The version number to restore to\n\n**Requires Authentication**"
+          },
+          "response": [
+            {
+              "name": "Note Restored",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n    \"id\": 1,\n    \"title\": \"My First Note\",\n    \"content\": \"This is the original content.\",\n    \"owner_id\": 1,\n    \"created_at\": \"2024-01-01T00:00:00.000000\",\n    \"updated_at\": \"2024-01-01T00:02:00.000000\"\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Note was restored', function() {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('id');",
+                  "    pm.expect(jsonData).to.have.property('title');",
+                  "    pm.expect(jsonData).to.have.property('content');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
