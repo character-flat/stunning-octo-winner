@@ -16,7 +16,7 @@ router = APIRouter(prefix="/notes", tags=["notes"])
 
 
 def create_version(db: Session, note: Note, version_number: int):
-    """Create a version snapshot of a note"""
+    """Create a version snapshot of a note (does not commit, caller should commit)"""
     version = NoteVersion(
         note_id=note.id,
         title=note.title,
@@ -24,7 +24,7 @@ def create_version(db: Session, note: Note, version_number: int):
         version_number=version_number,
     )
     db.add(version)
-    db.commit()
+
 
 
 @router.post("/", response_model=NoteResponse, status_code=status.HTTP_201_CREATED)
@@ -37,6 +37,7 @@ def create_note(note_data: NoteCreate, db: Session = Depends(get_db)):
     
     # Create initial version (version 1)
     create_version(db, note, version_number=1)
+    db.commit()
     
     return note
 
@@ -83,19 +84,19 @@ def update_note(note_id: int, note_data: NoteUpdate, db: Session = Depends(get_d
     
     # Only create a new version if changes were made
     if changed:
-        # Get the latest version number with FOR UPDATE lock BEFORE committing
+        # Get the latest version number with FOR UPDATE lock
         latest_version = db.query(NoteVersion).filter(
             NoteVersion.note_id == note_id
         ).order_by(NoteVersion.version_number.desc()).with_for_update().first()
         
         new_version_number = (latest_version.version_number + 1) if latest_version else 1
         
-        # Now commit the note changes
+        # Create the new version (in same transaction as note update)
+        create_version(db, note, version_number=new_version_number)
+        
+        # Commit both note changes and version creation in single transaction
         db.commit()
         db.refresh(note)
-        
-        # Create the new version
-        create_version(db, note, version_number=new_version_number)
     
     return note
 
